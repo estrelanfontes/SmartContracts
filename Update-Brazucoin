@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+contract MyToken is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, UUPSUpgradeable {
+   bool public community_allow;
+   mapping(address => uint256) public tokenUsage;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // Correct position of transfer function
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        tokenUsage[msg.sender] += amount;
+        return super.transfer(recipient, amount);
+    }
+
+        function initialize(address initialOwner) initializer public {
+        __ERC20_init("BrazuCoin", "BZC");
+        __ERC20Burnable_init();
+        __Ownable_init(initialOwner);
+        __ERC20Permit_init("BrazuCoin");
+        __UUPSUpgradeable_init();
+        _mint(msg.sender, 100 * 10 ** decimals());
+        community_allow = true;
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal view onlyOwner override {
+        require(community_allow == true, "Upgrade not allowed by the community");
+        newImplementation = 0xd9145CCE52D386f254917e481eB44e9943F39138;
+    }
+}
+
+/*
+NEW IMPLEMENTATION
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Promo {
+   bool public community_allow;
+   mapping(address => uint256) public tokenUsage;
+
+    function getPromotionStatus(address user) public view returns (string memory) {
+        require(community_allow == true, "Upgrade not allowed by the community");
+        uint256 usage = tokenUsage[user];
+        if (usage >= 1000) {
+            return "Gold Status";
+        } else if (usage >= 500) {
+            return "Silver Status";
+        } else {
+            return "Regular Status";
+        }
+    }
+}
+
+*/
